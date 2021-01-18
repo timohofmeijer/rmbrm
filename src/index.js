@@ -1,3 +1,4 @@
+// BASED ON: https://threejs.org/examples/#webgl_buffergeometry_drawrange
 import * as THREE from "./three.module.js";
 // import Stats from "./jsm/libs/stats.module.js";
 import { GUI } from "./dat.gui.module.js";
