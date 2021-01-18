@@ -5,6 +5,12 @@ import { GUI } from "./dat.gui.module.js";
 
 import { OrbitControls } from "./OrbitControls.js";
 
+const ENV = {
+  CONNECTIONS: false,
+  MOVE_PARTICLES: false,
+  SPIN: false
+};
+
 let group;
 let container;
 const particlesData = [];
@@ -16,17 +22,17 @@ let particlePositions;
 let particleColors;
 let linesMesh;
 
-const maxParticleCount = 2000;
+const maxParticleCount = 1000;
 let particleCount = 500;
 const r = 500;
 const rHalf = r / 2;
 
 const effectController = {
   showDots: true,
-  showLines: true,
+  showLines: ENV.CONNECTIONS,
   minDistance: 150,
   limitConnections: true,
-  maxConnections: 5,
+  maxConnections: 3,
   particleCount: 500
 };
 
@@ -53,6 +59,8 @@ function initGUI() {
     });
 }
 
+/*
+// Circle Texture in stead of dot?
 function createCanvasMaterial(color, size) {
   var matCanvas = document.createElement("canvas");
   matCanvas.width = matCanvas.height = size;
@@ -71,6 +79,7 @@ function createCanvasMaterial(color, size) {
   // return a texture made from the canvas
   return texture;
 }
+*/
 
 function init() {
   initGUI();
@@ -112,16 +121,17 @@ function init() {
     // map: createCanvasMaterial("#fff", 256),
     // depthWrite: false,
     // opacity: 1,
-    size: 40,
-    // blending: THREE.AdditiveBlending,
-    // transparent: true,
-    // sizeAttenuation: false,
+    size: 5,
+    blending: THREE.AdditiveBlending,
+    transparent: true,
+    sizeAttenuation: false,
     vertexColors: THREE.VertexColors
   });
 
   particles = new THREE.BufferGeometry();
   particlePositions = new Float32Array(maxParticleCount * 3);
   particleColors = new Float32Array(maxParticleCount * 3);
+
   var _r = r / 1;
   for (let i = 0; i < maxParticleCount; i++) {
     const x = Math.random() * _r - _r / 2;
@@ -136,6 +146,9 @@ function init() {
     particleColors[i * 3] = Math.random() * 1 - 1 / 2;
     particleColors[i * 3 + 1] = Math.random() * 1 - 1 / 2;
     particleColors[i * 3 + 2] = Math.random() * 1 - 1 / 2;
+    // particleColors[i * 3] = 1;
+    // particleColors[i * 3 + 1] = 1;
+    // particleColors[i * 3 + 2] = 1;
 
     // add it to the geometry
     particlesData.push({
@@ -162,7 +175,6 @@ function init() {
       THREE.DynamicDrawUsage
     )
   );
-  // particles.colors = particleColors;
 
   // create the particle system
   pointCloud = new THREE.Points(particles, pMaterial);
@@ -175,7 +187,6 @@ function init() {
     new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage)
   );
 
-  // geometry.color = particleColors;
   geometry.setAttribute(
     "color",
     new THREE.BufferAttribute(colors, 3).setUsage(THREE.DynamicDrawUsage)
@@ -205,9 +216,6 @@ function init() {
 
   //
 
-  // stats = new Stats();
-  // container.appendChild(stats.dom);
-
   window.addEventListener("resize", onWindowResize, false);
 }
 
@@ -219,9 +227,9 @@ function onWindowResize() {
 }
 
 function animate() {
-  // let vertexpos = 0;
-  // let colorpos = 0;
-  // let numConnected = 0;
+  let vertexpos = 0;
+  let colorpos = 0;
+  let numConnected = 0;
 
   for (let i = 0; i < particleCount; i++) particlesData[i].numConnections = 0;
 
@@ -229,29 +237,36 @@ function animate() {
     // get the particle
     const particleData = particlesData[i];
 
-    particlePositions[i * 3] += particleData.velocity.x;
-    particlePositions[i * 3 + 1] += particleData.velocity.y;
-    particlePositions[i * 3 + 2] += particleData.velocity.z;
-    // particlePositions[i * 3] += 0;
-    // particlePositions[i * 3 + 1] += 0;
-    // particlePositions[i * 3 + 2] += 0;
+    // DYNAMIC COLORS?
     // particleColors[i * 3] = 1;
-    if (
-      particlePositions[i * 3 + 1] < -rHalf ||
-      particlePositions[i * 3 + 1] > rHalf
-    )
-      particleData.velocity.y = -particleData.velocity.y;
+    // particleColors[i * 3 + 1] = 1;
+    // particleColors[i * 3 + 2] = 1;
 
-    if (particlePositions[i * 3] < -rHalf || particlePositions[i * 3] > rHalf)
-      particleData.velocity.x = -particleData.velocity.x;
+    // MOVE PARTICLE VIA VELOCITY
+    if (ENV.MOVE_PARTICLES) {
+      particlePositions[i * 3] += particleData.velocity.x;
+      particlePositions[i * 3 + 1] += particleData.velocity.y;
+      particlePositions[i * 3 + 2] += particleData.velocity.z;
 
-    if (
-      particlePositions[i * 3 + 2] < -rHalf ||
-      particlePositions[i * 3 + 2] > rHalf
-    )
-      particleData.velocity.z = -particleData.velocity.z;
+      if (
+        particlePositions[i * 3 + 1] < -rHalf ||
+        particlePositions[i * 3 + 1] > rHalf
+      )
+        particleData.velocity.y = -particleData.velocity.y;
 
-    /*
+      if (particlePositions[i * 3] < -rHalf || particlePositions[i * 3] > rHalf)
+        particleData.velocity.x = -particleData.velocity.x;
+
+      if (
+        particlePositions[i * 3 + 2] < -rHalf ||
+        particlePositions[i * 3 + 2] > rHalf
+      )
+        particleData.velocity.z = -particleData.velocity.z;
+    }
+
+    // DRAW CONNECTIONS IF ENABLED
+    if (!ENV.CONNECTIONS) continue;
+
     if (
       effectController.limitConnections &&
       particleData.numConnections >= effectController.maxConnections
@@ -276,7 +291,7 @@ function animate() {
         particleData.numConnections++;
         particleDataB.numConnections++;
 
-        const alpha = 1.0 - dist / effectController.minDistance;
+        const alpha = (1.0 - dist / effectController.minDistance) / 12;
 
         positions[vertexpos++] = particlePositions[i * 3];
         positions[vertexpos++] = particlePositions[i * 3 + 1];
@@ -297,16 +312,20 @@ function animate() {
         numConnected++;
       }
     }
-    */
   }
 
-  /*
-  linesMesh.geometry.setDrawRange(0, numConnected * 2);
-  linesMesh.geometry.attributes.position.needsUpdate = true;
-  linesMesh.geometry.attributes.color.needsUpdate = true;
-*/
-  // pointCloud.geometry.attributes.position.needsUpdate = true;
-  // pointCloud.geometry.attributes.color.needsUpdate = true;
+  if (ENV.CONNECTIONS) {
+    linesMesh.geometry.setDrawRange(0, numConnected * 2);
+    linesMesh.geometry.attributes.position.needsUpdate = true;
+    linesMesh.geometry.attributes.color.needsUpdate = true;
+  }
+
+  if (ENV.MOVE_PARTICLES) {
+    pointCloud.geometry.attributes.position.needsUpdate = true;
+  }
+
+  // DYNAMIC COLORS?
+  pointCloud.geometry.attributes.color.needsUpdate = true;
 
   requestAnimationFrame(animate);
 
@@ -317,6 +336,6 @@ function animate() {
 function render() {
   const time = Date.now() * 0.001;
 
-  group.rotation.y = time * 0.1;
+  if (ENV.SPIN) group.rotation.y = time * 0.1;
   renderer.render(scene, camera);
 }
