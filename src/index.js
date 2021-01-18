@@ -1,12 +1,11 @@
 import * as THREE from "./three.module.js";
-
 // import Stats from "./jsm/libs/stats.module.js";
 import { GUI } from "./dat.gui.module.js";
-
 import { OrbitControls } from "./OrbitControls.js";
 
 const ENV = {
-  CONNECTIONS: false,
+  SHOW_LINES: false,
+  SHOW_HELPER: false,
   MOVE_PARTICLES: false,
   SPIN: false
 };
@@ -29,7 +28,7 @@ const rHalf = r / 2;
 
 const effectController = {
   showDots: true,
-  showLines: ENV.CONNECTIONS,
+  showLines: ENV.SHOW_LINES,
   minDistance: 150,
   limitConnections: true,
   maxConnections: 3,
@@ -103,13 +102,15 @@ function init() {
   group = new THREE.Group();
   scene.add(group);
 
-  const helper = new THREE.BoxHelper(
-    new THREE.Mesh(new THREE.BoxBufferGeometry(r, r, r))
-  );
-  helper.material.color.setHex(0x101010);
-  helper.material.blending = THREE.AdditiveBlending;
-  helper.material.transparent = true;
-  group.add(helper);
+  if (ENV.SHOW_HELPER) {
+    const helper = new THREE.BoxHelper(
+      new THREE.Mesh(new THREE.BoxBufferGeometry(r, r, r))
+    );
+    helper.material.color.setHex(0x101010);
+    helper.material.blending = THREE.AdditiveBlending;
+    helper.material.transparent = true;
+    group.add(helper);
+  }
 
   const segments = maxParticleCount * maxParticleCount;
 
@@ -265,7 +266,7 @@ function animate() {
     }
 
     // DRAW CONNECTIONS IF ENABLED
-    if (!ENV.CONNECTIONS) continue;
+    if (!ENV.SHOW_LINES) continue;
 
     if (
       effectController.limitConnections &&
@@ -314,7 +315,7 @@ function animate() {
     }
   }
 
-  if (ENV.CONNECTIONS) {
+  if (ENV.SHOW_LINES) {
     linesMesh.geometry.setDrawRange(0, numConnected * 2);
     linesMesh.geometry.attributes.position.needsUpdate = true;
     linesMesh.geometry.attributes.color.needsUpdate = true;
